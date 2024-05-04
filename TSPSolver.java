@@ -1,3 +1,78 @@
+import java.util.*;
+
+public class TSPSolver<E extends Comparable<? super E>> {
+
+    /**
+     * Approximates the shortest cycle that starts and ends at the same vertex and visits all other vertices once.
+     * @param g the graph to find the circuit in
+     * @return the list of vertices in order they would be visited on the shortest cycle
+     */
+    public ArrayList<E> getApproxShortestCircuit(WeightedDiGraphList<E> g) {
+        PriorityQueue<Triple<E>> edgeQueue = new PriorityQueue<>(Comparator.comparingInt(Triple::getWeight));
+        Map<E, Integer> degrees = new HashMap<>();
+        Map<E, Set<E>> connectedComponents = new HashMap<>();
+
+        for (E v : g.getVertices()) {
+            degrees.put(v, 0);
+            connectedComponents.put(v, new HashSet<>());
+            for (E u : g.getAllAdjacent(v)) {
+                if (v.compareTo(u) < 0) {
+                    edgeQueue.add(new Triple<>(v, u, g.getWeight(v, u)));
+                }
+            }
+        }
+
+        ArrayList<E> tour = new ArrayList<>();
+        int numVertices = g.getVertices().size();
+
+        while (!edgeQueue.isEmpty() && tour.size() < numVertices) {
+            Triple<E> edge = edgeQueue.poll();
+            E v1 = edge.getStart();
+            E v2 = edge.getEnd();
+
+            if (degrees.get(v1) < 2 && degrees.get(v2) < 2 && !formsCycle(v1, v2, connectedComponents)) {
+                connectedComponents.get(v1).add(v2);
+                connectedComponents.get(v2).add(v1);
+                degrees.put(v1, degrees.get(v1) + 1);
+                degrees.put(v2, degrees.get(v2) + 1);
+                tour.add(v1);
+                tour.add(v2);
+            }
+        }
+
+        return convertToPath(tour, numVertices);
+    }
+
+    private boolean formsCycle(E v1, E v2, Map<E, Set<E>> connectedComponents) {
+        Set<E> visited = new HashSet<>();
+        Stack<E> stack = new Stack<>();
+        stack.push(v1);
+
+        while (!stack.isEmpty()) {
+            E current = stack.pop();
+            if (current.equals(v2)) {
+                return true;
+            }
+            visited.add(current);
+            for (E neighbor : connectedComponents.get(current)) {
+                if (!visited.contains(neighbor)) {
+                    stack.push(neighbor);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private ArrayList<E> convertToPath(ArrayList<E> edges, int numVertices) {
+        LinkedHashSet<E> uniqueVertices = new LinkedHashSet<>(edges);
+        if (uniqueVertices.size() != numVertices) {
+            return new ArrayList<>(uniqueVertices);
+        }
+        return new ArrayList<>(uniqueVertices);
+    }
+}
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
